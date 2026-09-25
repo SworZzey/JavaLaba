@@ -1,6 +1,7 @@
 module com.sworzzey.storecatalog {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.desktop;
 
 
     opens com.sworzzey.storecatalog to javafx.fxml;

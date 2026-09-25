@@ -23,10 +23,10 @@
    <bottom>
       <HBox prefHeight="100.0" prefWidth="200.0" spacing="20.0" BorderPane.alignment="CENTER">
          <children>
-            <Button fx:id="btnLoadCsv" mnemonicParsing="false" text="Загрузить CSV" />
+            <Button fx:id="btnLoadCsv" mnemonicParsing="false" text="Загрузить CSV" onAction="#onAddCsvClicked"/>
             <Button fx:id="btnSaveCsv" mnemonicParsing="false" text="Сохранить CSV" />
             <Button fx:id="btnAdd" mnemonicParsing="false" text="Добавить" onAction="#onAddClicked"/>
-            <Button fx:id="btnEdit" mnemonicParsing="false" text="Изменить" />
+            <Button fx:id="btnEdit" mnemonicParsing="false" text="Изменить" onAction="#onEditClicked" />
          </children>
       </HBox>
    </bottom>

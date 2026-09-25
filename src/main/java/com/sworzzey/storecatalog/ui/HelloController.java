@@ -6,6 +6,9 @@ import javafx.fxml.FXML;
 import com.sworzzey.storecatalog.model.Product;
 import com.sworzzey.storecatalog.model.DiscontinuedProduct;
 import com.sworzzey.storecatalog.model.WarrantyProduct;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -14,10 +17,21 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import com.sworzzey.storecatalog.model.WarrantyProduct;
 import com.sworzzey.storecatalog.model.DiscontinuedProduct;
-
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import java.io.File;
+import com.sworzzey.storecatalog.service.CsvService;
+import javax.swing.*;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.PrimitiveIterator;
 
 public class HelloController {
+    //массив с товарами
+    private final ObservableList<Product> products = FXCollections.observableArrayList();
+
+
     @FXML
     private TableView<Product> productTable;
 
@@ -48,15 +62,83 @@ public class HelloController {
     @FXML
     private Button btnAdd;
 
+    @FXML
+    private Button btnLoadCsv;
+
     //обработчик клика на кнопку добавить
     @FXML
-    private void onAddClicked() {
-        products.add(
-                new Product(999, "Test", "Test", 100, 5)
+    private void onAddClicked() throws IOException {
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/com/sworzzey/storecatalog/product-dialog.fxml")
         );
+
+        Scene scene = new Scene(loader.load());
+        Stage stage = new Stage();
+        stage.setTitle("Добавление товара");
+        stage.setScene(scene);
+        stage.showAndWait();
+
+        ProductDialogController controller = loader.getController();
+        Product newProduct = controller.getProduct();
+        if (newProduct != null) {
+            products.add(newProduct);
+        }
     }
 
-    private final ObservableList<Product> products = FXCollections.observableArrayList();
+    //кнопка редактировать
+    @FXML
+    private void onEditClicked() throws IOException {
+        Product selectedProduct = productTable.getSelectionModel().getSelectedItem();
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/com/sworzzey/storecatalog/product-dialog.fxml")
+        );
+
+        Scene scene = new Scene(loader.load());
+        Stage stage = new Stage();
+        stage.setTitle("Редактирование товара");
+        stage.setScene(scene);
+
+        ProductDialogController controller = loader.getController();
+        controller.setProduct(selectedProduct);
+        stage.showAndWait();
+
+        Product changedProduct = controller.getProduct();
+        if (changedProduct != null) {
+            products.set(products.indexOf(selectedProduct), changedProduct);
+        }
+    }
+
+    //загрузить из csv
+    private final CsvService csvService = new CsvService();
+    @FXML
+    private void onAddCsvClicked() {
+        try {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Выберите csv файл");
+            fileChooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter("CSV файлы", "*.csv")
+            );
+
+            Stage stage = (Stage) btnLoadCsv.getScene().getWindow();
+
+            File selevtedFile = fileChooser.showOpenDialog(stage);
+
+            if(selevtedFile == null) {
+                return;
+            }
+
+            Path pathToFile = selevtedFile.toPath();
+            List<Product> productsFromCsv = csvService.loadCsv(pathToFile);
+            products.clear();
+            products.addAll(productsFromCsv);
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Ошибка загрузки");
+            alert.setContentText("Ошибка загрузки csv файла");
+            alert.showAndWait();
+        }
+    }
 
     @FXML
     public void initialize() {
