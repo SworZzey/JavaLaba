@@ -12,16 +12,28 @@ import java.io.BufferedReader;
 import java.nio.file.Files;
 
 public class CsvService {
+    private List<CsvException> lastErrors = new ArrayList<>();
+
+    public List<CsvException> getLastErrors() {
+        return lastErrors;
+    }
+
     public List<Product> loadCsv(Path file) throws IOException {
+        lastErrors.clear();
         List<Product> res = new ArrayList<>();
         try (BufferedReader br = Files.newBufferedReader(file)) {
             String line;
-
+            int lineNumber = 0;
             while ((line = br.readLine()) != null) {
+                lineNumber++;
                 if (line.isBlank()) continue;
                 String[] values = line.split(",");
 
-                if (((values[0].equals("PRODUCT") || values[0].equals("DISCONTINUED")) && values.length == 6) || (values[0].equals("WARRANTY") && values.length == 7)) {
+                if (!(values[0].equals("PRODUCT") || values[0].equals("DISCONTINUED") || values[0].equals("WARRANTY"))) {
+                    lastErrors.add(new CsvException(CsvException.CsvErrorCode.UNKNOWN_TYPE, lineNumber));
+                } else if (((values[0].equals("PRODUCT") || values[0].equals("DISCONTINUED")) && values.length != 6) || (values[0].equals("WARRANTY") && values.length != 7)) {
+                    lastErrors.add(new CsvException(CsvException.CsvErrorCode.WRONG_FIELD_COUNT, lineNumber));
+                } else {
                     try {
                         switch (values[0]) {
                             case "PRODUCT" ->
@@ -32,10 +44,8 @@ public class CsvService {
                                     res.add(new DiscontinuedProduct(Long.parseLong(values[1]), values[2], values[3], Double.parseDouble(values[4]), Integer.parseInt(values[5])));
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println("Skipped invalid CSV row:" + line);
+                        lastErrors.add(new CsvException(CsvException.CsvErrorCode.BAD_NUMBER, lineNumber));
                     }
-                } else {
-                    System.out.println("Skipped invalid CSV row:" + line);
                 }
             }
         }

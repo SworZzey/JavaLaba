@@ -1,5 +1,6 @@
 package com.sworzzey.storecatalog.ui;
 
+import com.sworzzey.storecatalog.service.CsvException;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
@@ -131,6 +132,25 @@ public class HelloController {
             List<Product> productsFromCsv = csvService.loadCsv(pathToFile);
             products.clear();
             products.addAll(productsFromCsv);
+            //кастомные ошибки
+            if (!csvService.getLastErrors().isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Предупреждение");
+                alert.setHeaderText("При загрузке были найдены некоректные данные");
+
+                StringBuilder sb = new StringBuilder();
+
+                for (CsvException e : csvService.getLastErrors()) {
+                    sb.append("Строка ")
+                            .append(e.getLineNumber())
+                            .append(": ")
+                            .append(e.getErrorCode())
+                            .append("\n");
+                }
+
+                alert.setContentText(sb.toString());
+                alert.showAndWait();
+            }
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Ошибка");
