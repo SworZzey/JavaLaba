@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sworzzey.storecatalog.ui.HelloController">
+   <center>
+      <TableView fx:id="productTable" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <columns>
+            <TableColumn fx:id="typeColumn" prefWidth="75.0" text="Тип" />
+          <TableColumn fx:id="articleColumn" prefWidth="75.0" text="Артикул" />
+          <TableColumn fx:id="nameColumn" prefWidth="75.0" text="Название" />
+            <TableColumn fx:id="categoryColumn" prefWidth="75.0" text="Категория" />
+            <TableColumn fx:id="priceColumn" prefWidth="75.0" text="Цена" />
+            <TableColumn fx:id="stockColumn" prefWidth="75.0" text="Остаток" />
+            <TableColumn fx:id="warrantyColumn" prefWidth="75.0" text="Гарантия" />
+        </columns>
+      </TableView>
+   </center>
+   <bottom>
+      <HBox prefHeight="100.0" prefWidth="200.0" spacing="20.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="btnLoadCsv" mnemonicParsing="false" text="Загрузить CSV" />
+            <Button fx:id="btnSaveCsv" mnemonicParsing="false" text="Сохранить CSV" />
+            <Button fx:id="btnAdd" mnemonicParsing="false" text="Добавить" onAction="#onAddClicked"/>
+            <Button fx:id="btnEdit" mnemonicParsing="false" text="Изменить" />
+         </children>
+      </HBox>
+   </bottom>
+</BorderPane>
