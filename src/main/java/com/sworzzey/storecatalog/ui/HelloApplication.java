@@ -1,13 +1,9 @@
 package com.sworzzey.storecatalog.ui;
 
-import com.sworzzey.storecatalog.model.Product;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import com.sworzzey.storecatalog.model.Product;
-import com.sworzzey.storecatalog.model.DiscontinuedProduct;
-import com.sworzzey.storecatalog.model.WarrantyProduct;
 
 import java.io.IOException;
 

@@ -15,8 +15,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import com.sworzzey.storecatalog.model.WarrantyProduct;
-import com.sworzzey.storecatalog.model.DiscontinuedProduct;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
@@ -25,7 +23,6 @@ import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.PrimitiveIterator;
 
 public class HelloController {
     //массив с товарами
@@ -65,7 +62,10 @@ public class HelloController {
     @FXML
     private Button btnLoadCsv;
 
-    //обработчик клика на кнопку добавить
+    @FXML
+    private Button btnSaveCsv;
+
+    //клика на кнопку добавить
     @FXML
     private void onAddClicked() throws IOException {
         FXMLLoader loader = new FXMLLoader(
@@ -136,6 +136,34 @@ public class HelloController {
             alert.setTitle("Ошибка");
             alert.setHeaderText("Ошибка загрузки");
             alert.setContentText("Ошибка загрузки csv файла");
+            alert.showAndWait();
+        }
+    }
+
+    //Сохранить в CSV
+    public void onSaveCsvClicked() {
+        try {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Сохранить в CSV");
+            fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("CSV файлы", "*.csv")
+            );
+
+            Stage stage = (Stage) btnSaveCsv.getScene().getWindow();
+            File file = fileChooser.showSaveDialog(stage);
+
+            if(file == null) {
+                return;
+            }
+
+            Path whereSave = file.toPath();
+            csvService.saveCsv(whereSave, products);
+
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Ошибка сохранения");
+            alert.setContentText("Ошибка сохранения csv файла");
             alert.showAndWait();
         }
     }
