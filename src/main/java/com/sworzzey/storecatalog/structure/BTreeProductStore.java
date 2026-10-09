@@ -221,4 +221,41 @@ public class BTreeProductStore implements ProductStore{
         }
         bypassRange(root, action, from, to);
     }
+
+    //обходит все дерево 1 раз и обновляет накопитель
+    private void collectFillStats(Node node, FillStatsAccumulator accumulator) {
+        accumulator.nodeCount++;
+        accumulator.totalKeys += node.keyCount;
+        accumulator.nodesByKeyCount[node.keyCount]++;
+        if (node.leaf) {
+            accumulator.leafCount++;
+        } else {
+            for (int i = 0; i <= node.keyCount; i++) {
+                collectFillStats(node.children[i], accumulator);
+            }
+        }
+    }
+
+    //метод определения высоты дерева
+    private int calculateHeight(Node node, int count) {
+        if (node.leaf) {
+            return count;
+        }
+        return calculateHeight(node.children[0], ++count);
+    }
+
+
+    @Override
+    public NodeFillStats getFillStats() {
+        FillStatsAccumulator stats = new FillStatsAccumulator();
+        collectFillStats(root, stats);
+        int height = calculateHeight(root, 0);
+        double fill = ((double)stats.totalKeys/(stats.nodeCount*MAX_KEYS))*100;
+        int[] copyNodesByKeyCount = new int[MAX_KEYS+1];
+        for (int i = 0; i < stats.nodesByKeyCount.length; i++) {
+            copyNodesByKeyCount[i] = stats.nodesByKeyCount[i];
+        }
+
+        return new NodeFillStats(stats.nodeCount, stats.leafCount, height, copyNodesByKeyCount, fill);
+    }
 }
