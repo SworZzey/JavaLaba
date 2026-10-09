@@ -30,11 +30,11 @@ public class BTreeProductStore implements ProductStore{
     }
 
     // накапливает значения для статистики
-    private final class FillStatsAccumulator {
+    private static final class FillStatsAccumulator {
         private int nodeCount;
         private int leafCount;
         private int totalKeys;
-        private int[] nodesByKeyCount;
+        private final int[] nodesByKeyCount;
 
         private FillStatsAccumulator() {
             nodesByKeyCount = new int[MAX_KEYS + 1];
@@ -61,10 +61,6 @@ public class BTreeProductStore implements ProductStore{
         return size;
     }
 
-    @Override
-    public boolean removeByArticle(long article) {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public Product findByArticle(long article) {
@@ -257,5 +253,220 @@ public class BTreeProductStore implements ProductStore{
         }
 
         return new NodeFillStats(stats.nodeCount, stats.leafCount, height, copyNodesByKeyCount, fill);
+    }
+
+
+    //Удаление из листа
+    private void removeFromLeaf(Node leaf, int index) {
+        for (int i = index; i < leaf.keyCount-1; i++) {
+            leaf.keys[i] = leaf.keys[i+1];
+            leaf.products[i] = leaf.products[i+1];
+        }
+        leaf.keys[leaf.keyCount - 1] = 0;
+        leaf.products[leaf.keyCount - 1] = null;
+        leaf.keyCount--;
+    }
+
+    //слияние детей у которых минимальное кол-во ключей
+    private void mergeChildren(Node parent, int index) {
+        Node leftSibling = parent.children[index];
+        Node rightSibling = parent.children[index+1];
+        int startIndex = leftSibling.keyCount+1;
+        //из родителя в левого брата передаем
+        leftSibling.keys[leftSibling.keyCount] = parent.keys[index];
+        leftSibling.products[leftSibling.keyCount] = parent.products[index];
+        leftSibling.keyCount++;
+        //из правого брата в левого
+        for (int i = 0; i < rightSibling.keyCount; i++) {
+            leftSibling.keys[leftSibling.keyCount] = rightSibling.keys[i];
+            leftSibling.products[leftSibling.keyCount] = rightSibling.products[i];
+            leftSibling.keyCount++;
+        }
+        //переносим детей правого брата
+        if (!rightSibling.leaf) {
+            for (int i = 0; i < rightSibling.keyCount+1; i++) {
+                leftSibling.children[startIndex+i] = rightSibling.children[i];
+                rightSibling.children[i] = null;
+            }
+        }
+        //Удаляем у родителя перенесенные
+        for (int i = index; i < parent.keyCount-1; i++) {
+            parent.keys[i] = parent.keys[i+1];
+            parent.products[i] = parent.products[i+1];
+        }
+        for (int i = index+1; i < parent.keyCount; i++) {
+            parent.children[i] = parent.children[i+1];
+        }
+        parent.keyCount--;
+        parent.keys[parent.keyCount] = 0;
+        parent.products[parent.keyCount] = null;
+        parent.children[parent.keyCount+1] = null;
+    }
+
+    //заимствование ключа у левого брата
+    private void borrowFromLeftSibling(Node parent, int childIndex) {
+        Node leftSibling = parent.children[childIndex - 1];
+        Node rightSibling = parent.children[childIndex];
+        //освобождаем место у правого брата
+        for (int i = rightSibling.keyCount; i > 0; i--) {
+            rightSibling.keys[i] = rightSibling.keys[i-1];
+            rightSibling.products[i] = rightSibling.products[i-1];
+        }
+        //из родителя в правого брата
+        rightSibling.keys[0] = parent.keys[childIndex-1];
+        rightSibling.products[0] = parent.products[childIndex-1];
+
+        //из левого брата в родителя
+        parent.keys[childIndex-1] = leftSibling.keys[leftSibling.keyCount-1];
+        parent.products[childIndex-1] = leftSibling.products[leftSibling.keyCount-1];
+
+        //перенос детей
+        if (!leftSibling.leaf) {
+            for (int i = rightSibling.keyCount; i >= 0; i--) {
+                rightSibling.children[i + 1] = rightSibling.children[i];
+            }
+
+            rightSibling.children[0] = leftSibling.children[leftSibling.keyCount];
+            leftSibling.children[leftSibling.keyCount] = null;
+        }
+        //очищаем
+        leftSibling.keyCount--;
+        leftSibling.keys[leftSibling.keyCount] = 0;
+        leftSibling.products[leftSibling.keyCount] = null;
+        rightSibling.keyCount++;
+    }
+
+    //заимствование ключа у правого брата
+    private void borrowFromRightSibling(Node parent, int childIndex) {
+        Node rightSibling = parent.children[childIndex + 1];
+        Node leftSibling = parent.children[childIndex];
+        //из родителя в левого брата
+        leftSibling.keys[leftSibling.keyCount] = parent.keys[childIndex];
+        leftSibling.products[leftSibling.keyCount] = parent.products[childIndex];
+
+        //из правого брата в родителя
+        parent.keys[childIndex] = rightSibling.keys[0];
+        parent.products[childIndex] = rightSibling.products[0];
+
+        //перенос детей
+        if (!rightSibling.leaf) {
+            leftSibling.children[leftSibling.keyCount + 1] = rightSibling.children[0];
+            for (int i = 0; i < rightSibling.keyCount; i++) {
+                rightSibling.children[i] = rightSibling.children[i + 1];
+            }
+
+            rightSibling.children[rightSibling.keyCount] = null;
+        }
+
+        // Сдвигаем ключи и продукты правого брата влево
+        for (int i = 0; i < rightSibling.keyCount - 1; i++) {
+            rightSibling.keys[i] = rightSibling.keys[i + 1];
+            rightSibling.products[i] = rightSibling.products[i + 1];
+        }
+
+        //очищаем
+        rightSibling.keyCount--;
+        rightSibling.keys[rightSibling.keyCount] = 0;
+        rightSibling.products[rightSibling.keyCount] = null;
+        leftSibling.keyCount++;
+    }
+
+
+    //проверка чтобы не осталось пустых узлов
+    private int ensureChildHasSpareKey(Node parent, int childIndex) {
+        if (parent.children[childIndex].keyCount > MIN_KEYS) {
+            return childIndex;
+        }
+        if (childIndex > 0 && parent.children[childIndex-1].keyCount > MIN_KEYS) {
+            borrowFromLeftSibling(parent, childIndex);
+            return childIndex;
+        }
+        if (childIndex < parent.keyCount && parent.children[childIndex+1].keyCount > MIN_KEYS) {
+            borrowFromRightSibling(parent, childIndex);
+            return childIndex;
+        }
+        if (childIndex > 0) {
+            mergeChildren(parent, childIndex-1);
+            return childIndex-1;
+        }
+        mergeChildren(parent, childIndex);
+        return childIndex;
+
+    }
+
+    //самый большой ключ из поддерева
+    private long findPredecessor(Node node) {
+        if (node.leaf) {
+            return node.keys[node.keyCount-1];
+        }
+        return findPredecessor(node.children[node.keyCount]);
+    }
+
+    //самый маленький ключ из поддерева
+    private long findSuccessor(Node node) {
+        if (node.leaf) {
+            return node.keys[0];
+        }
+        return findSuccessor(node.children[0]);
+    }
+
+    //рекурсивное удаление
+    private boolean removeRecursive(Node node, long article) {
+        int index = findKeyIndex(node, article);
+        if (index < node.keyCount && node.keys[index] == article) {
+            if (node.leaf) {
+                removeFromLeaf(node, index);
+                return true;
+            } else {
+                if (node.children[index].keyCount > MIN_KEYS) {
+                    long biggestKey = findPredecessor(node.children[index]);
+                    Product biggesProduct = findByArticle(biggestKey);
+
+                    node.keys[index] = biggestKey;
+                    node.products[index] = biggesProduct;
+                    return removeRecursive(node.children[index], biggestKey);
+
+                } else if (node.children[index+1].keyCount > MIN_KEYS) {
+                    long smallesKey = findSuccessor(node.children[index+1]);
+                    Product smallesProduct = findByArticle(smallesKey);
+
+                    node.keys[index] = smallesKey;
+                    node.products[index] = smallesProduct;
+                    return removeRecursive(node.children[index+1], smallesKey);
+                } else {
+                    mergeChildren(node, index);
+                    return removeRecursive(node.children[index], article);
+                }
+            }
+
+        } else {
+            if (node.leaf) {
+                return false;
+            }
+            int preparedChild = ensureChildHasSpareKey(node, index);
+            return removeRecursive(node.children[preparedChild], article);
+        }
+    }
+
+
+    @Override
+    public boolean removeByArticle(long article) {
+        if (root.keyCount == 0) {
+            return false;
+        }
+
+        if (findByArticle(article) == null) {
+            return false;
+        }
+
+        boolean isDeleted = removeRecursive(root, article);
+
+        if (isDeleted) {
+            size--;
+        }
+        if (root.keyCount == 0 && !root.leaf) {
+            root = root.children[0];
+        }
+        return isDeleted;
     }
 }

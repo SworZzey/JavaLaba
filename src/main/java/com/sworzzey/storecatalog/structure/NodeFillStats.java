@@ -11,7 +11,11 @@ public class NodeFillStats {
         this.nodeCount = nodeCount;
         this.leafCount = leafCount;
         this.height = height;
-        this.distribution = distribution;
+        //Защищаем от изменения
+        this.distribution = new int[distribution.length];
+        for (int i = 0; i < distribution.length; i++) {
+            this.distribution[i] = distribution[i];
+        }
         this.averageFillPercent = averageFillPercent;
     }
 
@@ -27,8 +31,13 @@ public class NodeFillStats {
         return height;
     }
 
+    //отдаем копию массива
     public int[] getDistribution() {
-        return distribution;
+        int[] copy = new int[distribution.length];
+        for (int i = 0; i < distribution.length; i++) {
+            copy[i] = distribution[i];
+        }
+        return copy;
     }
 
     public double getAverageFillPercent() {
