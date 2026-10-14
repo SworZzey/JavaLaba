@@ -45,4 +45,10 @@ public interface ProductStore {
      *Статистика заполненности дерева
      */
     NodeFillStats getFillStats();
+
+
+    /**
+     * Очистка дерева
+     */
+    void clear();
 }

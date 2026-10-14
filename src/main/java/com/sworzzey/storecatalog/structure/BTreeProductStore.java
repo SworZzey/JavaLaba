@@ -469,4 +469,12 @@ public class BTreeProductStore implements ProductStore{
         }
         return isDeleted;
     }
+
+
+    @Override
+    public void clear() {
+        Node newNode = new Node(true);
+        root = newNode;
+        size = 0;
+    }
 }
