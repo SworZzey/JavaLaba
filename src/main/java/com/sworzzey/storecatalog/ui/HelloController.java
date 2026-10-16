@@ -1,6 +1,8 @@
 package com.sworzzey.storecatalog.ui;
 
 import com.sworzzey.storecatalog.service.CsvException;
+import com.sworzzey.storecatalog.service.GenerateCatalogTask;
+import com.sworzzey.storecatalog.structure.ProductStore;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
@@ -9,10 +11,7 @@ import com.sworzzey.storecatalog.model.DiscontinuedProduct;
 import com.sworzzey.storecatalog.model.WarrantyProduct;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -24,10 +23,16 @@ import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
+
+import com.sworzzey.storecatalog.service.CatalogService;
+import com.sworzzey.storecatalog.structure.BTreeProductStore;
 
 public class HelloController {
     //массив с товарами
     private final ObservableList<Product> products = FXCollections.observableArrayList();
+    private final CatalogService storage = new CatalogService(new BTreeProductStore());
+
 
 
     @FXML
@@ -66,7 +71,23 @@ public class HelloController {
     @FXML
     private Button btnSaveCsv;
 
-    //клика на кнопку добавить
+    @FXML
+    private Button btnDelete;
+
+    @FXML
+    private TextField productAmount;
+
+    @FXML
+    private Button btnGenerate;
+
+    @FXML
+    private Button btnStop;
+
+    @FXML
+    private ProgressBar progressBar;
+
+
+    //клик на кнопку добавить
     @FXML
     private void onAddClicked() throws IOException {
         FXMLLoader loader = new FXMLLoader(
@@ -82,7 +103,15 @@ public class HelloController {
         ProductDialogController controller = loader.getController();
         Product newProduct = controller.getProduct();
         if (newProduct != null) {
-            products.add(newProduct);
+            if (!storage.add(newProduct)) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Предупреждение");
+                alert.setHeaderText("Не удалось добавить товар");
+                alert.setContentText("Товар с таким артикулом уже существует.");
+                alert.showAndWait();
+            }
+
+            refreshProducts();
         }
     }
 
@@ -105,9 +134,35 @@ public class HelloController {
 
         Product changedProduct = controller.getProduct();
         if (changedProduct != null) {
-            products.set(products.indexOf(selectedProduct), changedProduct);
+            if(!storage.replace(selectedProduct.getArticle(), changedProduct)) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Предупреждение");
+                alert.setHeaderText("Не удалось изменить товар");
+                alert.setContentText("Товар с таким артикулом уже существует.");
+                alert.showAndWait();
+            }
+            refreshProducts();
         }
     }
+
+    //кнопка удалить
+    @FXML
+    private void onDeleteClicked() {
+        Product selectedProduct = productTable.getSelectionModel().getSelectedItem();
+        if (selectedProduct == null) {
+            return;
+        }
+        if (!storage.remove(selectedProduct.getArticle())) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не удалось удалить товар");
+            alert.setContentText("Произошла ошибка при удалении товара");
+            alert.showAndWait();
+        }
+        refreshProducts();
+    }
+
+
 
     //загрузить из csv
     private final CsvService csvService = new CsvService();
@@ -130,8 +185,14 @@ public class HelloController {
 
             Path pathToFile = selevtedFile.toPath();
             List<Product> productsFromCsv = csvService.loadCsv(pathToFile);
-            products.clear();
-            products.addAll(productsFromCsv);
+            storage.clear();
+            int matches = 0;
+            for (int i = 0; i < productsFromCsv.size(); i++) {
+                if (!storage.add(productsFromCsv.get(i))) {
+                    matches++;
+                }
+            }
+            refreshProducts();
             //кастомные ошибки
             if (!csvService.getLastErrors().isEmpty()) {
                 Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -149,6 +210,12 @@ public class HelloController {
                 }
 
                 alert.setContentText(sb.toString());
+                alert.showAndWait();
+            }
+            if (matches != 0) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Предупреждение");
+                alert.setHeaderText("При загрузке данных было удалено" + matches + "товаров с повторяющимися индексами");
                 alert.showAndWait();
             }
         } catch (IOException e) {
@@ -177,7 +244,7 @@ public class HelloController {
             }
 
             Path whereSave = file.toPath();
-            csvService.saveCsv(whereSave, products);
+            csvService.saveCsv(whereSave, storage.getAllSorted());
 
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -188,9 +255,126 @@ public class HelloController {
         }
     }
 
+
+    //сгенерировать товары
+    private GenerateCatalogTask generateTask;
+    private static final int MAX_GENERATE_COUNT = 1_000_000;
+
+    private void updateSelectionButtons() {
+        Product selected = productTable.getSelectionModel().getSelectedItem();
+
+        boolean hasSelection = selected != null;
+
+        btnDelete.setDisable(!hasSelection);
+        btnEdit.setDisable(!hasSelection || selected instanceof DiscontinuedProduct);
+    }
+
+    //выключение кнопок
+    private void setButtons(boolean generating) {
+        btnAdd.setDisable(generating);
+        btnLoadCsv.setDisable(generating);
+        btnSaveCsv.setDisable(generating);
+        btnGenerate.setDisable(generating);
+        productAmount.setDisable(generating);
+        btnStop.setDisable(!generating);
+        productTable.setDisable(generating);
+
+        // При генерации эти кнопки всегда отключены.
+        if (generating) {
+            btnEdit.setDisable(true);
+            btnDelete.setDisable(true);
+        } else {
+            updateSelectionButtons();
+        }
+    }
+
+    @FXML
+    public void onStopClicked() {
+        if (generateTask != null) {
+            generateTask.cancel();
+        }
+    }
+
+    @FXML
+    public void onGenerateClicked() {
+        int amount;
+        try {
+            amount = Integer.parseInt(productAmount.getText().trim());
+            if (amount < 1 || amount > MAX_GENERATE_COUNT) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Предупреждение");
+                alert.setHeaderText("Укажите нормально число");
+                alert.showAndWait();
+                return;
+            }
+        } catch (NumberFormatException e) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Предупреждение");
+            alert.setHeaderText("Укажите нормально число");
+            alert.showAndWait();
+            return;
+        }
+        if (storage.size() > 0) {
+            Alert option = new Alert(Alert.AlertType.CONFIRMATION);
+            option.setTitle("Подтвердите действие");
+            option.setHeaderText("Текущий каталог будет заменен другими данными");
+            Optional<ButtonType> result = option.showAndWait();
+            if (result.isEmpty() || result.get() != ButtonType.OK) {
+                return;
+            }
+        }
+
+        generateTask = new GenerateCatalogTask(amount, System.currentTimeMillis(), 1);
+        //привязываем прогресс бар
+        progressBar.progressProperty().bind(generateTask.progressProperty());
+
+        generateTask.setOnSucceeded(event -> {
+            ProductStore newStore = generateTask.getValue();
+
+            storage.replaceStorage(newStore);
+            refreshProducts();
+
+            progressBar.progressProperty().unbind();
+            progressBar.setProgress(0);
+            generateTask = null;
+            setButtons(false);
+        });
+
+        generateTask.setOnCancelled(event -> {
+            progressBar.progressProperty().unbind();
+            progressBar.setProgress(0);
+            generateTask = null;
+            setButtons(false);
+        });
+
+        generateTask.setOnFailed(event -> {
+            Throwable er = generateTask.getException();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Ошибка генерации товаров " + er);
+            alert.showAndWait();
+            progressBar.progressProperty().unbind();
+            progressBar.setProgress(0);
+            generateTask = null;
+            setButtons(false);
+        });
+
+        Thread thread = new Thread(generateTask);
+        thread.setDaemon(true);
+        setButtons(true);
+        thread.start();
+    }
+
+
+
+    private void refreshProducts() {
+        products.setAll(storage.getAllSorted());
+    }
+
     @FXML
     public void initialize() {
         btnEdit.setDisable(true);
+        btnDelete.setDisable(true);
 
         //что лежит в колонках
         typeColumn.setCellValueFactory(cellData -> {
@@ -218,24 +402,14 @@ public class HelloController {
             return new SimpleIntegerProperty(0).asObject();
         });
 
-        //тестовый товары
-        products.addAll(
-                new Product(123, "Pillow", "Clothes", 12334, 12),
-                new WarrantyProduct(333, "Pot", "Kitchen", 1200, 10, 12),
-                new DiscontinuedProduct(132, "Cup", "Kitchen", 1322, 0)
-        );
-
         productTable.setItems(products);
 
-        //изменение состояни кнопки редактирования
+        //изменение состояния кнопки редактирования
         productTable.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldProduct, newProduct) -> {
-                    if (newProduct == null) {
-                        btnEdit.setDisable(true);
-                        return;
+                    if (generateTask == null) {
+                        updateSelectionButtons();
                     }
-
-                    btnEdit.setDisable(!newProduct.isEditable());
                 }
         );
     }

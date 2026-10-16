@@ -4,7 +4,8 @@ public class CsvException extends Exception{
     public enum CsvErrorCode {
         BAD_NUMBER,
         WRONG_FIELD_COUNT,
-        UNKNOWN_TYPE
+        UNKNOWN_TYPE,
+        DUPLICATE_ARTICLE
     }
 
     private final int lineNumber;

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CatalogService {
-    private final ProductStore storage;
+    private ProductStore storage;
 
     public CatalogService(ProductStore storage) {
         this.storage = storage;
@@ -78,5 +78,13 @@ public class CatalogService {
         } else {
             return false;
         }
+    }
+
+
+    public void replaceStorage(ProductStore newStorage) {
+        if (newStorage == null) {
+            throw new IllegalArgumentException("Передан null");
+        }
+        storage = newStorage;
     }
 }
