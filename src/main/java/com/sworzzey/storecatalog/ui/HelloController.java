@@ -1,7 +1,6 @@
 package com.sworzzey.storecatalog.ui;
 
-import com.sworzzey.storecatalog.service.CsvException;
-import com.sworzzey.storecatalog.service.GenerateCatalogTask;
+import com.sworzzey.storecatalog.service.*;
 import com.sworzzey.storecatalog.structure.ProductStore;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -18,14 +17,12 @@ import javafx.collections.ObservableList;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
-import com.sworzzey.storecatalog.service.CsvService;
 import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import com.sworzzey.storecatalog.service.CatalogService;
 import com.sworzzey.storecatalog.structure.BTreeProductStore;
 
 public class HelloController {
@@ -165,68 +162,111 @@ public class HelloController {
 
 
     //загрузить из csv
-    private final CsvService csvService = new CsvService();
     @FXML
     private void onAddCsvClicked() {
-        try {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Выберите csv файл");
-            fileChooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("CSV файлы", "*.csv")
-            );
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Выберите csv файл");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("CSV файлы", "*.csv")
+        );
 
-            Stage stage = (Stage) btnLoadCsv.getScene().getWindow();
+        Stage stage = (Stage) btnLoadCsv.getScene().getWindow();
 
-            File selevtedFile = fileChooser.showOpenDialog(stage);
+        File selevtedFile = fileChooser.showOpenDialog(stage);
 
-            if(selevtedFile == null) {
+        if (selevtedFile == null) {
+            return;
+        }
+
+        Path pathToFile = selevtedFile.toPath();
+        loadTask = new CsvLoadTask(pathToFile);
+        progressBar.progressProperty().bind(loadTask.progressProperty());
+
+        loadTask.setOnSucceeded(event -> {
+            LoadedCatalog newStore = loadTask.getValue();
+            if (newStore == null) {
+                progressBar.progressProperty().unbind();
+                progressBar.setProgress(0);
+                loadTask = null;
+                setButtons(false);
                 return;
             }
 
-            Path pathToFile = selevtedFile.toPath();
-            List<Product> productsFromCsv = csvService.loadCsv(pathToFile);
-            storage.clear();
-            int matches = 0;
-            for (int i = 0; i < productsFromCsv.size(); i++) {
-                if (!storage.add(productsFromCsv.get(i))) {
-                    matches++;
-                }
-            }
+            storage.replaceStorage(newStore.store());
             refreshProducts();
-            //кастомные ошибки
-            if (!csvService.getLastErrors().isEmpty()) {
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Предупреждение");
-                alert.setHeaderText("При загрузке были найдены некоректные данные");
 
-                StringBuilder sb = new StringBuilder();
+            CsvLoadResult result = newStore.result();
 
-                for (CsvException e : csvService.getLastErrors()) {
-                    sb.append("Строка ")
-                            .append(e.getLineNumber())
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Загрузка CSV");
+            alert.setHeaderText("Загрузка завершена");
+            alert.setContentText(
+                    "Загружено товаров: " + result.getLoaded() +
+                            "\nКоличество ошибок: " + result.getErrors()
+            );
+            alert.showAndWait();
+
+            if (!result.getErrList().isEmpty()) {
+                StringBuilder errorMessage = new StringBuilder();
+
+                for (CsvException error : result.getErrList()) {
+                    errorMessage.append("Строка ")
+                            .append(error.getLineNumber())
                             .append(": ")
-                            .append(e.getErrorCode())
+                            .append(error.getErrorCode())
                             .append("\n");
                 }
 
-                alert.setContentText(sb.toString());
-                alert.showAndWait();
+                Alert errorAlert = new Alert(Alert.AlertType.WARNING);
+                errorAlert.setTitle("Ошибки CSV");
+                errorAlert.setHeaderText("При загрузке обнаружены ошибки");
+
+                TextArea textArea = new TextArea(errorMessage.toString());
+                textArea.setEditable(false);
+                textArea.setWrapText(true);
+                textArea.setMaxWidth(Double.MAX_VALUE);
+                textArea.setMaxHeight(Double.MAX_VALUE);
+                textArea.setPrefRowCount(15);
+
+                errorAlert.getDialogPane().setContent(textArea);
+                errorAlert.getDialogPane().setPrefWidth(550);
+                errorAlert.getDialogPane().setPrefHeight(400);
+
+                errorAlert.showAndWait();
             }
-            if (matches != 0) {
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Предупреждение");
-                alert.setHeaderText("При загрузке данных было удалено" + matches + "товаров с повторяющимися индексами");
-                alert.showAndWait();
-            }
-        } catch (IOException e) {
+
+            progressBar.progressProperty().unbind();
+            progressBar.setProgress(0);
+            loadTask = null;
+            setButtons(false);
+        });
+
+        loadTask.setOnCancelled(event -> {
+            progressBar.progressProperty().unbind();
+            progressBar.setProgress(0);
+            loadTask = null;
+            setButtons(false);
+        });
+
+        loadTask.setOnFailed(event -> {
+            Throwable er = loadTask.getException();
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Ошибка");
-            alert.setHeaderText("Ошибка загрузки");
-            alert.setContentText("Ошибка загрузки csv файла");
+            alert.setHeaderText("Ошибка загрузки товаров " + er);
             alert.showAndWait();
-        }
+            progressBar.progressProperty().unbind();
+            progressBar.setProgress(0);
+            loadTask = null;
+            setButtons(false);
+        });
+
+        Thread thread = new Thread(loadTask);
+        thread.setDaemon(true);
+        setButtons(true);
+        thread.start();
     }
 
+    private final CsvService csvService = new CsvService();
     //Сохранить в CSV
     public void onSaveCsvClicked() {
         try {
@@ -258,6 +298,8 @@ public class HelloController {
 
     //сгенерировать товары
     private GenerateCatalogTask generateTask;
+    private CsvLoadTask loadTask;
+
     private static final int MAX_GENERATE_COUNT = 1_000_000;
 
     private void updateSelectionButtons() {
@@ -288,13 +330,19 @@ public class HelloController {
         }
     }
 
+    //кнопка отмена
     @FXML
     public void onStopClicked() {
         if (generateTask != null) {
             generateTask.cancel();
         }
+        if (loadTask != null) {
+            loadTask.cancel();
+        }
     }
 
+
+    //кнопка сгенерировать
     @FXML
     public void onGenerateClicked() {
         int amount;

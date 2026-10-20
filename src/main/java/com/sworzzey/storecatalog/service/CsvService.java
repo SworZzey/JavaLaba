@@ -15,7 +15,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
 
 public class CsvService {
-    private List<CsvException> lastErrors = new ArrayList<>();
     private static final String TYPE_PRODUCT = "PRODUCT";
     private static final String TYPE_DISCONTINUED = "DISCONTINUED";
     private static final String TYPE_WARRANTY = "WARRANTY";
@@ -24,11 +23,8 @@ public class CsvService {
     private static final int WARRANTY_FIELD_COUNT = 7;
 
     private static final int MAX_STORED_ERRORS = 100;
-    private static final int PROGRESS_STEP = 1000;
+    private static final int PROGRESS_STEP = 100;
 
-    public List<CsvException> getLastErrors() {
-        return lastErrors;
-    }
 
     private Product parseProduct(String[] values) {
         return switch (values[0]) {
@@ -80,46 +76,65 @@ public class CsvService {
     }
 
     public CsvLoadResult load(Path file, ProductStore target, BooleanSupplier cancelled, DoubleConsumer progress) throws IOException {
+        long totalLines = 0;
+        List<CsvException> errors = new ArrayList<>();
+        int totalErrors = 0;
+        int loaded = 0;
+        int lineNumber = 0;
+        try (BufferedReader br = Files.newBufferedReader(file)) {
+            while (br.readLine() != null) {
+                totalLines++;
+            }
+        }
+        if (totalLines == 0) {
+            CsvLoadResult result = new CsvLoadResult(0, 0, List.of(), true);
+            progress.accept(1);
+            return result;
+        }
+
         try (BufferedReader br = Files.newBufferedReader(file)){
             String line;
-
-        } catch (NumberFormatException e) {
-
-        }
-    }
-
-    public List<Product> loadCsv(Path file) throws IOException {
-        lastErrors.clear();
-        List<Product> res = new ArrayList<>();
-        try (BufferedReader br = Files.newBufferedReader(file)) {
-            String line;
-            int lineNumber = 0;
             while ((line = br.readLine()) != null) {
+                if (cancelled.getAsBoolean()) {
+                    return new CsvLoadResult(loaded, totalErrors, errors, false);
+                }
                 lineNumber++;
                 if (line.isBlank()) continue;
-                String[] values = line.split(",");
-
-                if (!(values[0].equals("PRODUCT") || values[0].equals("DISCONTINUED") || values[0].equals("WARRANTY"))) {
-                    lastErrors.add(new CsvException(CsvException.CsvErrorCode.UNKNOWN_TYPE, lineNumber));
-                } else if (((values[0].equals("PRODUCT") || values[0].equals("DISCONTINUED")) && values.length != 6) || (values[0].equals("WARRANTY") && values.length != 7)) {
-                    lastErrors.add(new CsvException(CsvException.CsvErrorCode.WRONG_FIELD_COUNT, lineNumber));
+                String[] values = line.split(",", -1);
+                if (!isKnownType(values[0])) {
+                    totalErrors++;
+                    if (errors.size() < MAX_STORED_ERRORS) {
+                        errors.add(new CsvException(CsvException.CsvErrorCode.UNKNOWN_TYPE, lineNumber));
+                    }
+                } else if (!hasCorrectFieldCount(values)) {
+                    totalErrors++;
+                    if (errors.size() < MAX_STORED_ERRORS) {
+                        errors.add(new CsvException(CsvException.CsvErrorCode.WRONG_FIELD_COUNT, lineNumber));
+                    }
                 } else {
                     try {
-                        switch (values[0]) {
-                            case "PRODUCT" ->
-                                    res.add(new Product(Long.parseLong(values[1]), values[2], values[3], Double.parseDouble(values[4]), Integer.parseInt(values[5])));
-                            case "WARRANTY" ->
-                                    res.add(new WarrantyProduct(Long.parseLong(values[1]), values[2], values[3], Double.parseDouble(values[4]), Integer.parseInt(values[5]), Integer.parseInt(values[6])));
-                            case "DISCONTINUED" ->
-                                    res.add(new DiscontinuedProduct(Long.parseLong(values[1]), values[2], values[3], Double.parseDouble(values[4]), Integer.parseInt(values[5])));
+                        if(target.add(parseProduct(values))) {
+                            loaded++;
+                        } else {
+                            totalErrors++;
+                            if (errors.size() < MAX_STORED_ERRORS) {
+                                errors.add(new CsvException(CsvException.CsvErrorCode.DUPLICATE_ARTICLE, lineNumber));
+                            }
                         }
                     } catch (NumberFormatException e) {
-                        lastErrors.add(new CsvException(CsvException.CsvErrorCode.BAD_NUMBER, lineNumber));
+                        totalErrors++;
+                        if (errors.size() < MAX_STORED_ERRORS) {
+                            errors.add(new CsvException(CsvException.CsvErrorCode.BAD_NUMBER, lineNumber));
+                        }
                     }
+                }
+                if (lineNumber % PROGRESS_STEP == 0) {
+                    progress.accept((double)lineNumber/totalLines);
                 }
             }
         }
-        return res;
+        progress.accept(1);
+        return new CsvLoadResult(loaded, totalErrors, errors, true);
     }
 
     public void saveCsv(Path file, List<Product> products) throws IOException {
