@@ -51,4 +51,10 @@ public interface ProductStore {
      * Очистка дерева
      */
     void clear();
+
+
+    /**
+     * Снимок дерева для рисования в canvas
+     */
+    NodeView snapshot(int maxLevels);
 }

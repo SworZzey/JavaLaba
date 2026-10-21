@@ -2,6 +2,7 @@ package com.sworzzey.storecatalog.structure;
 
 import com.sworzzey.storecatalog.model.Product;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 public class BTreeProductStore implements ProductStore{
@@ -476,5 +477,31 @@ public class BTreeProductStore implements ProductStore{
         Node newNode = new Node(true);
         root = newNode;
         size = 0;
+    }
+
+    //снимок дерева для отрисовки
+    private NodeView snapshot(Node node, int level, int maxLevels) {
+        int keyCount = node.keyCount;
+        long[] keys = Arrays.copyOf(node.keys, keyCount);
+        if (node.leaf || level == maxLevels) {
+            boolean hidden = !node.leaf;
+            return new NodeView(keys, new NodeView[0], hidden);
+        }
+
+        NodeView[] children = new NodeView[keyCount+1];
+
+        for (int i = 0; i<= keyCount; i++) {
+            children[i] = snapshot(node.children[i], level+1, maxLevels);
+        }
+
+        return new NodeView(keys, children, false);
+    }
+
+    @Override
+    public NodeView snapshot(int maxLevels) {
+        if (maxLevels < 1) {
+            throw new IllegalArgumentException("maxLevel должен быть больше 0");
+        }
+        return snapshot(root, 1, maxLevels);
     }
 }

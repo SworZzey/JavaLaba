@@ -160,6 +160,16 @@ public class HelloController {
     }
 
 
+    private void finishBackgroundTask() {
+        progressBar.progressProperty().unbind();
+        progressBar.setProgress(0);
+
+        generateTask = null;
+        loadTask = null;
+
+        setButtons(false);
+    }
+
 
     //загрузить из csv
     @FXML
@@ -185,10 +195,7 @@ public class HelloController {
         loadTask.setOnSucceeded(event -> {
             LoadedCatalog newStore = loadTask.getValue();
             if (newStore == null) {
-                progressBar.progressProperty().unbind();
-                progressBar.setProgress(0);
-                loadTask = null;
-                setButtons(false);
+                finishBackgroundTask();
                 return;
             }
 
@@ -235,17 +242,11 @@ public class HelloController {
                 errorAlert.showAndWait();
             }
 
-            progressBar.progressProperty().unbind();
-            progressBar.setProgress(0);
-            loadTask = null;
-            setButtons(false);
+            finishBackgroundTask();
         });
 
         loadTask.setOnCancelled(event -> {
-            progressBar.progressProperty().unbind();
-            progressBar.setProgress(0);
-            loadTask = null;
-            setButtons(false);
+            finishBackgroundTask();
         });
 
         loadTask.setOnFailed(event -> {
@@ -254,10 +255,7 @@ public class HelloController {
             alert.setTitle("Ошибка");
             alert.setHeaderText("Ошибка загрузки товаров " + er);
             alert.showAndWait();
-            progressBar.progressProperty().unbind();
-            progressBar.setProgress(0);
-            loadTask = null;
-            setButtons(false);
+            finishBackgroundTask();
         });
 
         Thread thread = new Thread(loadTask);
@@ -382,17 +380,11 @@ public class HelloController {
             storage.replaceStorage(newStore);
             refreshProducts();
 
-            progressBar.progressProperty().unbind();
-            progressBar.setProgress(0);
-            generateTask = null;
-            setButtons(false);
+            finishBackgroundTask();
         });
 
         generateTask.setOnCancelled(event -> {
-            progressBar.progressProperty().unbind();
-            progressBar.setProgress(0);
-            generateTask = null;
-            setButtons(false);
+            finishBackgroundTask();
         });
 
         generateTask.setOnFailed(event -> {
@@ -401,10 +393,7 @@ public class HelloController {
             alert.setTitle("Ошибка");
             alert.setHeaderText("Ошибка генерации товаров " + er);
             alert.showAndWait();
-            progressBar.progressProperty().unbind();
-            progressBar.setProgress(0);
-            generateTask = null;
-            setButtons(false);
+            finishBackgroundTask();
         });
 
         Thread thread = new Thread(generateTask);
