@@ -4,6 +4,7 @@ import com.sworzzey.storecatalog.model.Product;
 import com.sworzzey.storecatalog.structure.NodeFillStats;
 import com.sworzzey.storecatalog.structure.NodeView;
 import com.sworzzey.storecatalog.structure.ProductStore;
+import com.sworzzey.storecatalog.structure.VisitTrace;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,8 @@ public class CatalogService {
         return storage.add(product);
     }
 
+    public boolean add(Product product, VisitTrace trace) { return storage.add(product, trace); }
+
     public boolean remove(long article) {
         return storage.removeByArticle(article);
     }
@@ -26,6 +29,8 @@ public class CatalogService {
     public Product find(long article) {
         return storage.findByArticle(article);
     }
+
+    public Product find(long article, VisitTrace trace) { return storage.findByArticle(article, trace); }
 
     public int size() {
         return storage.size();

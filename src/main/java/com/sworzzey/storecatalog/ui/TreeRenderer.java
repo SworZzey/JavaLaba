@@ -1,8 +1,10 @@
 package com.sworzzey.storecatalog.ui;
 
 import com.sworzzey.storecatalog.structure.NodeView;
+import com.sworzzey.storecatalog.structure.VisitTrace;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 
 public class TreeRenderer {
@@ -61,7 +63,7 @@ public class TreeRenderer {
         return new TreeDimensions(width, height);
     }
 
-    public void drawNode(GraphicsContext gc, NodeView root, double x, double y) {
+    public void drawNode(GraphicsContext gc, NodeView root, double x, double y, Color nodeColor, VisitTrace trace) {
         long[] keys = root.getKeys();
 
         gc.setTextAlign(TextAlignment.CENTER);
@@ -69,9 +71,21 @@ public class TreeRenderer {
 
         for (int i = 0; i < keys.length; i++) {
             double cellPosition = x+i*CELL_WIDTH;
+            Color cellColor = Color.WHITE;
+
+            if (trace != null && keys[i] == trace.getTargetKey()) {
+                cellColor = Color.LIGHTGREEN;
+            } else if (trace != null && trace.findId(root.getId())) {
+                cellColor = Color.ORANGE;
+            }
+
+            gc.setFill(cellColor);
+            gc.fillRect(cellPosition, y, CELL_WIDTH, CELL_HEIGHT);
+            gc.setStroke(Color.BLACK);
             gc.strokeRect(cellPosition, y, CELL_WIDTH, CELL_HEIGHT);
             double horizontalCentre = cellPosition + CELL_WIDTH / 2.0;
             double verticalCentre = y + CELL_HEIGHT / 2.0;
+            gc.setFill(Color.BLACK);
             gc.fillText(String.valueOf(keys[i]), horizontalCentre, verticalCentre);
         }
         if (root.isHasHiddenChildren()) {
@@ -133,7 +147,7 @@ public class TreeRenderer {
         }
     }
 
-    private void drawNodes(GraphicsContext gc, NodeView node, double left, double y) {
+    private void drawNodes(GraphicsContext gc, NodeView node, double left, double y, VisitTrace trace) {
         double subtreeWidth = subTreeWidth(node);
         long[] keys = node.getKeys();
         double nodeWidth = keys.length * CELL_WIDTH;
@@ -141,7 +155,14 @@ public class TreeRenderer {
         double centerX = left + subtreeWidth / 2.0;
         double nodeX = centerX - nodeWidth / 2.0;
 
-        drawNode(gc, node, nodeX, y);
+        Color nodeColor = Color.WHITE;
+
+        if (trace != null && trace.findId(node.getId())
+                && node.getId() != trace.getTargetNode()) {
+            nodeColor = Color.ORANGE;
+        }
+
+        drawNode(gc, node, nodeX, y, nodeColor, trace);
 
         NodeView[] children = node.getChildren();
 
@@ -160,14 +181,14 @@ public class TreeRenderer {
             for (NodeView child : children) {
                 double childSubtreeWidth = subTreeWidth(child);
 
-                drawNodes(gc, child, childLeft, childY);
+                drawNodes(gc, child, childLeft, childY, trace);
 
                 childLeft += childSubtreeWidth + NODE_GAP;
             }
         }
     }
 
-    public void draw(GraphicsContext gc, NodeView root) {
+    public void draw(GraphicsContext gc, NodeView root, VisitTrace trace) {
         TreeDimensions size = calculateSize(root);
         gc.clearRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
         if (root.getKeys().length == 0 && root.getChildren().length == 0) {
@@ -177,6 +198,6 @@ public class TreeRenderer {
             return;
         }
         drawEdges(gc, root, HORIZONTAL_PADDING, VERTICAL_PADDING);
-        drawNodes(gc, root, HORIZONTAL_PADDING, VERTICAL_PADDING);
+        drawNodes(gc, root, HORIZONTAL_PADDING, VERTICAL_PADDING, trace);
     }
 }

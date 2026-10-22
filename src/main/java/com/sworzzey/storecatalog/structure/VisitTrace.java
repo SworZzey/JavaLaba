@@ -1,12 +1,27 @@
 package com.sworzzey.storecatalog.structure;
 
+
 public class VisitTrace {
     private int[] ids;
     private int size;
+    private int targetNode = -1;
+    private long targetKey = -1;
 
     public VisitTrace() {
         this.ids = new int[8];
         size = 0;
+    }
+
+    private void setTargetNode(int nodeId) {
+        this.targetNode = nodeId;
+    }
+
+    public void setTargetKey(long key) {
+        this.targetKey = key;
+    }
+
+    public long getTargetKey() {
+        return targetKey;
     }
 
     public boolean add(int nodeId) {
@@ -19,6 +34,7 @@ public class VisitTrace {
         }
         ids[size] = nodeId;
         size++;
+        setTargetNode(nodeId);
         return true;
     }
 
@@ -40,5 +56,9 @@ public class VisitTrace {
             }
         }
         return false;
+    }
+
+    public int getTargetNode() {
+        return targetNode;
     }
 }

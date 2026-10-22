@@ -77,6 +77,7 @@ public class BTreeProductStore implements ProductStore{
         while (true) {
             if (trace != null) {
                 trace.add(current.id);
+                trace.setTargetKey(article);
             }
             int place = findKeyIndex(current, article);
             if (place < current.keyCount) {
@@ -163,6 +164,7 @@ public class BTreeProductStore implements ProductStore{
     private void insertNonFull(Node node, Product product, VisitTrace trace) {
         if (trace != null) {
             trace.add(node.id);
+            trace.setTargetKey(product.getArticle());
         }
         long article = product.getArticle();
         if (node.leaf) {
