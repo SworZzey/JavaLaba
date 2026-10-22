@@ -13,10 +13,20 @@ public interface ProductStore {
     boolean add(Product product);
 
     /**
+     * Тот же add только сохраняет узлы через которые прошел
+     */
+    boolean add(Product product, VisitTrace trace);
+
+    /**
      * Ищет товар по артикулу
      * @return найденный товар или null, если товара нет
      */
     Product findByArticle(long article);
+
+    /**
+     * Тот же findByArticle только сохраняет узлы в которые вошел
+     */
+    Product findByArticle(long article, VisitTrace trace);
 
     /**
      * Удаляет товар по артикулу
@@ -36,13 +46,12 @@ public interface ProductStore {
     void forEach(Consumer<Product> action);
 
     /**
-     *
      * Обходит все значения в диапазоне от from до to
      */
     void forEachInRange(long from, long to, Consumer<Product> action);
 
     /**
-     *Статистика заполненности дерева
+     * Статистика заполненности дерева
      */
     NodeFillStats getFillStats();
 

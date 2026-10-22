@@ -2,6 +2,7 @@ package com.sworzzey.storecatalog.service;
 
 import com.sworzzey.storecatalog.model.Product;
 import com.sworzzey.storecatalog.structure.NodeFillStats;
+import com.sworzzey.storecatalog.structure.NodeView;
 import com.sworzzey.storecatalog.structure.ProductStore;
 
 import java.util.ArrayList;
@@ -86,5 +87,9 @@ public class CatalogService {
             throw new IllegalArgumentException("Передан null");
         }
         storage = newStorage;
+    }
+
+    public NodeView getSnapshot(int maxLevels) {
+        return storage.snapshot(maxLevels);
     }
 }

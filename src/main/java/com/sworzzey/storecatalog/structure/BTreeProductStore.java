@@ -13,20 +13,23 @@ public class BTreeProductStore implements ProductStore{
 
     private Node root;
     private int size;
+    private int nextNodeId;
 
     private static final class Node {
         private final long[] keys;
         private final Product[] products;
         private final Node[] children;
+        private final int id;
 
         private int keyCount;
         private final boolean leaf;
 
-        private Node(boolean leaf) {
+        private Node(boolean leaf, int id) {
             this.leaf = leaf;
             this.keys = new long[MAX_KEYS];
             this.products = new Product[MAX_KEYS];
             this.children = new Node[MAX_CHILDREN];
+            this.id = id;
         }
     }
 
@@ -43,7 +46,7 @@ public class BTreeProductStore implements ProductStore{
     }
 
     public BTreeProductStore() {
-        root = new Node(true);
+        root = new Node(true, ++nextNodeId);
         size = 0;
     }
 
@@ -65,8 +68,16 @@ public class BTreeProductStore implements ProductStore{
 
     @Override
     public Product findByArticle(long article) {
+        return findByArticle(article, null);
+    }
+
+    @Override
+    public Product findByArticle(long article, VisitTrace trace) {
         Node current = root;
         while (true) {
+            if (trace != null) {
+                trace.add(current.id);
+            }
             int place = findKeyIndex(current, article);
             if (place < current.keyCount) {
                 if (current.keys[place] == article) {
@@ -106,7 +117,7 @@ public class BTreeProductStore implements ProductStore{
     private void splitChild(Node parent, int childIndex) {
         //переносим ключ и продукт от ребенка к брату
         Node child = parent.children[childIndex];
-        Node sibling = new Node(child.leaf);
+        Node sibling = new Node(child.leaf, ++nextNodeId);
         long moveKey = child.keys[2];
         Product moveProduct = child.products[2];
         child.keys[2] = 0;
@@ -149,7 +160,10 @@ public class BTreeProductStore implements ProductStore{
 
 
     //вставка в неполный узел
-    private void insertNonFull(Node node, Product product) {
+    private void insertNonFull(Node node, Product product, VisitTrace trace) {
+        if (trace != null) {
+            trace.add(node.id);
+        }
         long article = product.getArticle();
         if (node.leaf) {
             int insertIndex = findKeyIndex(node, article);
@@ -166,12 +180,17 @@ public class BTreeProductStore implements ProductStore{
                 splitChild(node, findKeyIndex(node, article));
                 child = node.children[findKeyIndex(node, article)];
             }
-            insertNonFull(child, product);
+            insertNonFull(child, product, trace);
         }
     }
 
     @Override
     public boolean add(Product product) {
+        return add(product, null);
+    }
+
+    @Override
+    public boolean add(Product product, VisitTrace trace) {
         if (product == null) {
             return false;
         } else if (findByArticle(product.getArticle()) != null) {
@@ -179,12 +198,12 @@ public class BTreeProductStore implements ProductStore{
         }
 
         if (root.keyCount == MAX_KEYS) {
-            Node newRoot = new Node(false);
+            Node newRoot = new Node(false, ++nextNodeId);
             newRoot.children[0] = root;
             root = newRoot;
             splitChild(newRoot, 0);
         }
-        insertNonFull(root, product);
+        insertNonFull(root, product, trace);
         size++;
         return true;
     }
@@ -474,8 +493,7 @@ public class BTreeProductStore implements ProductStore{
 
     @Override
     public void clear() {
-        Node newNode = new Node(true);
-        root = newNode;
+        root = new Node(true, ++nextNodeId);
         size = 0;
     }
 
@@ -485,7 +503,7 @@ public class BTreeProductStore implements ProductStore{
         long[] keys = Arrays.copyOf(node.keys, keyCount);
         if (node.leaf || level == maxLevels) {
             boolean hidden = !node.leaf;
-            return new NodeView(keys, new NodeView[0], hidden);
+            return new NodeView(keys, new NodeView[0], hidden, node.id);
         }
 
         NodeView[] children = new NodeView[keyCount+1];
@@ -494,7 +512,7 @@ public class BTreeProductStore implements ProductStore{
             children[i] = snapshot(node.children[i], level+1, maxLevels);
         }
 
-        return new NodeView(keys, children, false);
+        return new NodeView(keys, children, false, node.id);
     }
 
     @Override

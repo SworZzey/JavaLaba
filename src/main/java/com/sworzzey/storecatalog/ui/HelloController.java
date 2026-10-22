@@ -1,6 +1,8 @@
 package com.sworzzey.storecatalog.ui;
 
 import com.sworzzey.storecatalog.service.*;
+import com.sworzzey.storecatalog.structure.NodeFillStats;
+import com.sworzzey.storecatalog.structure.NodeView;
 import com.sworzzey.storecatalog.structure.ProductStore;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -11,11 +13,17 @@ import com.sworzzey.storecatalog.model.WarrantyProduct;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.canvas.Canvas;
+
+import java.awt.*;
 import java.io.File;
 import javax.swing.*;
 import java.io.IOException;
@@ -83,6 +91,16 @@ public class HelloController {
     @FXML
     private ProgressBar progressBar;
 
+    @FXML
+    private Canvas treeCanvas;
+
+    private final TreeRenderer treeRenderer = new TreeRenderer();
+
+    private static final int MAX_DRAWN_NODES = 64;
+    private static final int TRUNCATED_LEVELS = 3;
+    private static final double MAX_CANVAS_WIDTH = 8000;
+    private static final double MIN_CANVAS_WIDTH = 300;
+
 
     //клик на кнопку добавить
     @FXML
@@ -109,6 +127,7 @@ public class HelloController {
             }
 
             refreshProducts();
+            redrawTree();
         }
     }
 
@@ -139,6 +158,7 @@ public class HelloController {
                 alert.showAndWait();
             }
             refreshProducts();
+            redrawTree();
         }
     }
 
@@ -157,6 +177,7 @@ public class HelloController {
             alert.showAndWait();
         }
         refreshProducts();
+        redrawTree();
     }
 
 
@@ -201,6 +222,7 @@ public class HelloController {
 
             storage.replaceStorage(newStore.store());
             refreshProducts();
+            redrawTree();
 
             CsvLoadResult result = newStore.result();
 
@@ -379,6 +401,7 @@ public class HelloController {
 
             storage.replaceStorage(newStore);
             refreshProducts();
+            redrawTree();
 
             finishBackgroundTask();
         });
@@ -406,6 +429,33 @@ public class HelloController {
 
     private void refreshProducts() {
         products.setAll(storage.getAllSorted());
+    }
+
+    private void redrawTree() {
+        NodeFillStats stats = storage.getFillStats();
+
+        int nodeCount = stats.getNodeCount();
+        int totalLevels = stats.getHeight() + 1;
+
+        boolean showFullTree = nodeCount <= MAX_DRAWN_NODES;
+        int levelsToShow = showFullTree
+                ? Math.max(1, totalLevels)
+                : TRUNCATED_LEVELS;
+
+        NodeView view = storage.getSnapshot(levelsToShow);
+        TreeRenderer.TreeDimensions size = treeRenderer.calculateSize(view);
+
+        if (showFullTree && size.width > MAX_CANVAS_WIDTH) {
+            showFullTree = false;
+            levelsToShow = TRUNCATED_LEVELS;
+            view = storage.getSnapshot(levelsToShow);
+            size = treeRenderer.calculateSize(view);
+        }
+
+        treeCanvas.setWidth(Math.max(MIN_CANVAS_WIDTH, size.width));
+        treeCanvas.setHeight(Math.max(100, size.height));
+
+        treeRenderer.draw(treeCanvas.getGraphicsContext2D(), view);
     }
 
     @FXML
