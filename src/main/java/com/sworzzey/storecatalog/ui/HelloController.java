@@ -108,6 +108,7 @@ public class HelloController {
     private static final double MIN_CANVAS_WIDTH = 300;
 
 
+    //Алерт с результатом статистики
     private void showTreeStatsAlert() {
         long start = System.nanoTime();
         NodeFillStats stats = storage.getFillStats();
@@ -181,6 +182,7 @@ public class HelloController {
     }
 
 
+    //Алерт с результатом поиска
     private void showProductAlert(Product product, double time) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
 
