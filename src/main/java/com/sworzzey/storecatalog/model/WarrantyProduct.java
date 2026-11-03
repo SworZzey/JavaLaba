@@ -2,11 +2,14 @@ package com.sworzzey.storecatalog.model;
 
 public class WarrantyProduct extends Product{
     private int warrantyMonths;
+    private static final long serialVersionUID = 1L;
 
     public WarrantyProduct(long article, String name, String category, double price, int stock, int warrantyMonths) {
         super(article, name, category, price, stock);
         this.warrantyMonths = warrantyMonths;
     }
+
+    public WarrantyProduct() {}
 
     public int getWarrantyMonths() {
         return warrantyMonths;
