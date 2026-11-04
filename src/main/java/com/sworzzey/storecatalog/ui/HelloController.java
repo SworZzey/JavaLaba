@@ -1,5 +1,8 @@
 package com.sworzzey.storecatalog.ui;
 
+import com.sworzzey.storecatalog.serialization.BinarySerializer;
+import com.sworzzey.storecatalog.serialization.JsonSerializer;
+import com.sworzzey.storecatalog.serialization.Serializer;
 import com.sworzzey.storecatalog.service.*;
 import com.sworzzey.storecatalog.structure.*;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -100,7 +103,15 @@ public class HelloController {
     @FXML
     private Button btnFind;
 
+    @FXML
+    private Button btnImportCatalog;
+
+    @FXML
+    private Button btnExportCatalog;
+
     private final TreeRenderer treeRenderer = new TreeRenderer();
+    private CatalogSaveTask catalogSaveTask;
+    private CatalogLoadTask catalogLoadTask;
 
     private static final int MAX_DRAWN_NODES = 64;
     private static final int TRUNCATED_LEVELS = 3;
@@ -369,8 +380,11 @@ public class HelloController {
         progressBar.progressProperty().unbind();
         progressBar.setProgress(0);
 
+
         generateTask = null;
         loadTask = null;
+        catalogSaveTask = null;
+        catalogLoadTask = null;
 
         setButtons(false);
     }
@@ -524,6 +538,8 @@ public class HelloController {
         productAmount.setDisable(generating);
         btnStop.setDisable(!generating);
         productTable.setDisable(generating);
+        btnImportCatalog.setDisable(generating);
+        btnExportCatalog.setDisable(generating);
 
         // При генерации эти кнопки всегда отключены.
         if (generating) {
@@ -607,6 +623,140 @@ public class HelloController {
         thread.setDaemon(true);
         setButtons(true);
         thread.start();
+    }
+
+
+    //Экспортировать в json или bin
+    @FXML
+    public void onExportCatalogClicked() {
+        try {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Сохранить в json или bin");
+            FileChooser.ExtensionFilter jsonFilter = new FileChooser.ExtensionFilter("JSON файл", "*.json");
+            FileChooser.ExtensionFilter binFilter = new FileChooser.ExtensionFilter("bin файл", "*.bin");
+            fileChooser.getExtensionFilters().addAll(jsonFilter, binFilter);
+
+            Stage stage = (Stage) btnExportCatalog.getScene().getWindow();
+            File file = fileChooser.showSaveDialog(stage);
+
+            if(file == null) {
+                return;
+            }
+
+            FileChooser.ExtensionFilter selectedFile = fileChooser.getSelectedExtensionFilter();
+
+            Serializer serializer;
+            if (selectedFile == jsonFilter) {
+                serializer = new JsonSerializer();
+            } else {
+                serializer = new BinarySerializer();
+            }
+
+            Path path = file.toPath();
+            catalogSaveTask = new CatalogSaveTask(path, serializer, storage);
+            progressBar.progressProperty().bind(catalogSaveTask.progressProperty());
+
+            catalogSaveTask.setOnSucceeded(event -> {
+                finishBackgroundTask();
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Сохранение");
+                alert.setHeaderText("Сохранение завершено");
+                alert.showAndWait();
+            });
+
+            catalogSaveTask.setOnFailed(event -> {
+                Throwable err = catalogSaveTask.getException();
+                finishBackgroundTask();
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Не удалось сохранить каталог");
+                alert.setContentText(err.getMessage());
+                alert.showAndWait();
+            });
+
+
+            Thread thread = new Thread(catalogSaveTask);
+            thread.setDaemon(true);
+            setButtons(true);
+            btnStop.setDisable(true);
+            thread.start();
+        } catch (Exception e) {
+            finishBackgroundTask();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Ошибка сохранения");
+            alert.setContentText("Ошибка сохранения файла"+e.getMessage());
+            alert.showAndWait();
+        }
+    }
+
+
+    //Импортировать из json bin
+    @FXML
+    public void onImportCatalogClicked() {
+        try {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Импортировать json или bin");
+            FileChooser.ExtensionFilter jsonFilter = new FileChooser.ExtensionFilter("JSON файл", "*.json");
+            FileChooser.ExtensionFilter binFilter = new FileChooser.ExtensionFilter("bin файл", "*.bin");
+            fileChooser.getExtensionFilters().addAll(jsonFilter, binFilter);
+
+            Stage stage = (Stage) btnImportCatalog.getScene().getWindow();
+            File file = fileChooser.showOpenDialog(stage);
+
+            if(file == null) {
+                return;
+            }
+
+            FileChooser.ExtensionFilter selectedFile = fileChooser.getSelectedExtensionFilter();
+
+            Serializer serializer;
+            if (selectedFile == jsonFilter) {
+                serializer = new JsonSerializer();
+            } else {
+                serializer = new BinarySerializer();
+            }
+
+            Path path = file.toPath();
+            catalogLoadTask = new CatalogLoadTask(path, serializer);
+            progressBar.progressProperty().bind(catalogLoadTask.progressProperty());
+
+            catalogLoadTask.setOnSucceeded(event -> {
+                ProductStore newStore = catalogLoadTask.getValue();
+                storage.replaceStorage(newStore);
+                refreshProducts();
+                redrawTree();
+                finishBackgroundTask();
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Импорт");
+                alert.setHeaderText("Импорт успешно завершен");
+                alert.showAndWait();
+            });
+
+            catalogLoadTask.setOnFailed(event -> {
+                Throwable err = catalogLoadTask.getException();
+                finishBackgroundTask();
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Не удалось импортировать каталог");
+                alert.setContentText(err.getMessage());
+                alert.showAndWait();
+            });
+
+
+            Thread thread = new Thread(catalogLoadTask);
+            thread.setDaemon(true);
+            setButtons(true);
+            btnStop.setDisable(true);
+            thread.start();
+        } catch (Exception e) {
+            finishBackgroundTask();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Ошибка импорта");
+            alert.setContentText("Ошибка импорта файла"+e.getMessage());
+            alert.showAndWait();
+        }
     }
 
 

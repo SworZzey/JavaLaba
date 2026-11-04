@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "products": [
+    {
+      "type": "UNKNOWN",
+      "article": 1,
+      "name": "pillow",
+      "category": "house",
+      "price": 10.0,
+      "stock": 2
+    }
+  ]
+}

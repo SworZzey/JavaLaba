@@ -4,6 +4,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static com.sworzzey.storecatalog.serialization.CatalogValidator.validate;
+
 public class BinarySerializer implements Serializer{
     @Override
     public String format() {
@@ -12,6 +14,7 @@ public class BinarySerializer implements Serializer{
 
     @Override
     public void save(CatalogData data, Path path) throws IOException {
+        validate(data);
         try (
                 OutputStream fileStream = Files.newOutputStream(path);
                 ObjectOutputStream objectStream = new ObjectOutputStream(fileStream)
@@ -28,6 +31,7 @@ public class BinarySerializer implements Serializer{
         ) {
             Object loaded = objectStream.readObject();
             if (loaded instanceof CatalogData catalog) {
+                validate(catalog);
                 return catalog;
             }
             throw new IOException("Объект неподходящего типа");

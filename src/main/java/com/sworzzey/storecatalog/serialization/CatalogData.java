@@ -7,6 +7,7 @@ public class CatalogData implements Serializable{
     private int schemaVersion;
     private Product[] products;
     private static final long serialVersionUID = 1L;
+    public static final int CURRENT_SCHEMA_VERSION = 1;
 
     public CatalogData(int version, Product[] products) {
         this.schemaVersion = version;

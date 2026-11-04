@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -16,6 +18,7 @@ public class BinarySerializerTest {
     @TempDir
     private Path tempDir;
 
+    //позитивные тесты
     @Test
     public void roundTripPreservesProduct() throws IOException {
         Product product = new Product(1, "pillow", "house", 10, 2);
@@ -90,6 +93,7 @@ public class BinarySerializerTest {
         assertEquals(0, loaded.getProducts().length);
     }
 
+    //негативные тесты, не бинарный файл
     @Test
     public void rejectsCorruptedFile() throws IOException {
         Path path = tempDir.resolve("broken.bin");
@@ -97,5 +101,38 @@ public class BinarySerializerTest {
 
         BinarySerializer serializer = new BinarySerializer();
         assertThrows(IOException.class, () -> serializer.load(path));
+    }
+
+
+    //неверный тип
+    @Test
+    public void rejectsWrongObjectType() throws IOException {
+        Path path = tempDir.resolve("wrong-type.bin");
+        try (
+            OutputStream fileStream = Files.newOutputStream(path);
+            ObjectOutputStream objectStream = new ObjectOutputStream(fileStream)
+        ) {
+            objectStream.writeObject("Строка вместо каталога");
+        }
+        BinarySerializer serializer = new BinarySerializer();
+        assertThrows(IOException.class, () -> serializer.load(path));
+    }
+
+    //некорректная версия
+    @Test
+    public void rejectsUnsupportedVersion() throws IOException {
+        Product[] products = new Product[0];
+        CatalogData data = new CatalogData(CatalogData.CURRENT_SCHEMA_VERSION+1, products);
+
+        Path path = tempDir.resolve("unsupported-version.bin");
+        try (
+                OutputStream fileStream = Files.newOutputStream(path);
+                ObjectOutputStream objectStream = new ObjectOutputStream(fileStream)
+        ) {
+            objectStream.writeObject(data);
+        }
+        BinarySerializer serializer = new BinarySerializer();
+        IOException error = assertThrows(IOException.class, () -> serializer.load(path));
+        assertEquals("Неподдерживаемая версия", error.getMessage());
     }
 }

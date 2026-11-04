@@ -1,5 +1,6 @@
 package com.sworzzey.storecatalog.serialization;
 
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import com.sworzzey.storecatalog.model.DiscontinuedProduct;
 import com.sworzzey.storecatalog.model.Product;
 import com.sworzzey.storecatalog.model.WarrantyProduct;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -100,4 +102,40 @@ public class JsonSerializerTest {
         JsonSerializer serializer = new JsonSerializer();
         assertThrows(IOException.class, () -> serializer.load(path));
     }
-}
+
+
+    @Test
+    public void rejectsUnsupportedVersion() throws IOException {
+        Path path = tempDir.resolve("badVersion.json");
+        try (InputStream input = getClass().getResourceAsStream("/serialization/unsupported-version.json")) {
+            assertNotNull(input, "Не найден файл");
+            Files.copy(input, path);
+        }
+        JsonSerializer serializer = new JsonSerializer();
+        IOException error = assertThrows(IOException.class, () -> serializer.load(path));
+        assertEquals("Неподдерживаемая версия", error.getMessage());
+    }
+
+    @Test
+    public void rejectsUnknownProductType() throws IOException {
+        Path path = tempDir.resolve("badType.json");
+        try (InputStream input = getClass().getResourceAsStream("/serialization/unknown-product-type.json")) {
+            assertNotNull(input, "Не найден файл");
+            Files.copy(input, path);
+        }
+        JsonSerializer serializer = new JsonSerializer();
+        assertThrows(InvalidTypeIdException.class, () -> serializer.load(path));
+    }
+
+    @Test
+    public void rejectsMissingProducts() throws IOException {
+        Path path = tempDir.resolve("noProducts.json");
+        try (InputStream input = getClass().getResourceAsStream("/serialization/missing-products.json")) {
+            assertNotNull(input, "Не найден файл");
+            Files.copy(input, path);
+        }
+        JsonSerializer serializer = new JsonSerializer();
+        IOException error = assertThrows(IOException.class, () -> serializer.load(path));
+        assertEquals("Массив товаров отсутствует", error.getMessage());
+    }
+ }

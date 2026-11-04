@@ -72,4 +72,12 @@
             </items>
         </SplitPane>
     </center>
+   <top>
+      <HBox prefHeight="40.0" prefWidth="900.0" spacing="20.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="btnImportCatalog" mnemonicParsing="false" onAction="#onImportCatalogClicked" text="Импорт каталога" />
+            <Button fx:id="btnExportCatalog" mnemonicParsing="false" onAction="#onExportCatalogClicked" text="Экспорт каталога" />
+         </children>
+      </HBox>
+   </top>
 </BorderPane>

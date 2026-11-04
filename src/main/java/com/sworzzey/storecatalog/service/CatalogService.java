@@ -1,11 +1,11 @@
 package com.sworzzey.storecatalog.service;
 
 import com.sworzzey.storecatalog.model.Product;
-import com.sworzzey.storecatalog.structure.NodeFillStats;
-import com.sworzzey.storecatalog.structure.NodeView;
-import com.sworzzey.storecatalog.structure.ProductStore;
-import com.sworzzey.storecatalog.structure.VisitTrace;
+import com.sworzzey.storecatalog.serialization.CatalogData;
+import com.sworzzey.storecatalog.serialization.CatalogValidator;
+import com.sworzzey.storecatalog.structure.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,5 +96,29 @@ public class CatalogService {
 
     public NodeView getSnapshot(int maxLevels) {
         return storage.snapshot(maxLevels);
+    }
+
+
+    //экспортируем данные из дерева для сериализации
+    public CatalogData exportData() {
+        List<Product> exportedData = getAllSorted();
+        Product[] products = exportedData.toArray(new Product[0]);
+        return new CatalogData(CatalogData.CURRENT_SCHEMA_VERSION, products);
+    }
+
+
+    //строит дерево из загруженных данных
+    public static ProductStore createStore(CatalogData data) throws IOException {
+        CatalogValidator.validate(data);
+        ProductStore newTree = new BTreeProductStore();
+        for (int i = 0; i < data.getProducts().length; i++) {
+            if (data.getProducts()[i] == null) {
+                throw new IOException("Продукт отсутствует");
+            }
+            if(!newTree.add(data.getProducts()[i])) {
+                throw new IOException("Повторяющийся артикул" + data.getProducts()[i].getArticle());
+            }
+        }
+        return newTree;
     }
 }
