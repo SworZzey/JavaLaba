@@ -18,6 +18,8 @@ public class Product implements Editable, Serializable {
     private String category;
     private double price;
     private int stock;
+    private String note = "";
+    private int rating = 0;
     private static final long serialVersionUID = 1L;
 
     //конструктор
@@ -77,6 +79,30 @@ public class Product implements Editable, Serializable {
         this.stock = stock;
     }
 
+    //записка
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        if (note == null) {
+            throw new IllegalArgumentException("Заметка не может быть null");
+        }
+        this.note = note;
+    }
+
+    //рейтинг
+    public int getRating() {
+        return rating;
+    }
+
+    public void setRating(int rating) {
+        if (!(rating >= 0 && rating <= 5)) {
+            throw new IllegalArgumentException("Рейтинг должен быть от 0 до 5");
+        }
+        this.rating = rating;
+    }
+
     @Override
     public String toString() {
         return "Product{" +
@@ -85,6 +111,8 @@ public class Product implements Editable, Serializable {
                 ", category=" + category +
                 ", price=" + price +
                 ", stock=" + stock +
+                ", note=" + note +
+                ", rating=" + rating +
                 "}";
     }
 
