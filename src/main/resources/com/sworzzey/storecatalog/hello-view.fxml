@@ -55,6 +55,8 @@
                         <TableColumn fx:id="priceColumn" prefWidth="90.0" text="Цена" />
                         <TableColumn fx:id="stockColumn" prefWidth="80.0" text="Остаток" />
                         <TableColumn fx:id="warrantyColumn" prefWidth="90.0" text="Гарантия" />
+                        <TableColumn fx:id="noteColumn" prefWidth="180.0" text="Заметка" />
+                        <TableColumn fx:id="ratingColumn" prefWidth="70.0" text="Рейтинг" />
                     </columns>
                 </TableView>
                 <VBox minHeight="120.0" spacing="4.0">

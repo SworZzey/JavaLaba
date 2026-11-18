@@ -1,6 +1,7 @@
 package com.sworzzey.storecatalog.ui;
 
 import com.sworzzey.storecatalog.serialization.BinarySerializer;
+import com.sworzzey.storecatalog.serialization.CatalogData;
 import com.sworzzey.storecatalog.serialization.JsonSerializer;
 import com.sworzzey.storecatalog.serialization.Serializer;
 import com.sworzzey.storecatalog.service.*;
@@ -66,6 +67,12 @@ public class HelloController {
 
     @FXML
     private TableColumn<Product, Integer> warrantyColumn;
+
+    @FXML
+    private TableColumn<Product, String> noteColumn;
+
+    @FXML
+    private TableColumn<Product, Integer> ratingColumn;
 
     @FXML
     private Button btnEdit;
@@ -722,8 +729,18 @@ public class HelloController {
             progressBar.progressProperty().bind(catalogLoadTask.progressProperty());
 
             catalogLoadTask.setOnSucceeded(event -> {
-                ProductStore newStore = catalogLoadTask.getValue();
-                storage.replaceStorage(newStore);
+                CatalogImportResult newStore = catalogLoadTask.getValue();
+                if (newStore.sourceVersion() < CatalogData.CURRENT_SCHEMA_VERSION) {
+                    Alert option = new Alert(Alert.AlertType.CONFIRMATION);
+                    option.setTitle("Подтвердите действие");
+                    option.setHeaderText("Файл версии " + newStore.sourceVersion() + ". Мигрировать до версии " + CatalogData.CURRENT_SCHEMA_VERSION + "?");
+                    Optional<ButtonType> result = option.showAndWait();
+                    if (result.isEmpty() || result.get() != ButtonType.OK) {
+                        finishBackgroundTask();
+                        return;
+                    }
+                }
+                storage.replaceStorage(newStore.store());
                 refreshProducts();
                 redrawTree();
                 finishBackgroundTask();
@@ -827,6 +844,8 @@ public class HelloController {
             }
             return new SimpleIntegerProperty(0).asObject();
         });
+        noteColumn.setCellValueFactory(new PropertyValueFactory<>("note"));
+        ratingColumn.setCellValueFactory(new PropertyValueFactory<>("rating"));
 
         productTable.setItems(products);
 

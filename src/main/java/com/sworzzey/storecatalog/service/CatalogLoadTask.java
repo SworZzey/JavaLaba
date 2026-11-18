@@ -1,13 +1,14 @@
 package com.sworzzey.storecatalog.service;
 
 import com.sworzzey.storecatalog.serialization.CatalogData;
+import com.sworzzey.storecatalog.serialization.CatalogMigrator;
 import com.sworzzey.storecatalog.serialization.Serializer;
 import com.sworzzey.storecatalog.structure.ProductStore;
 import javafx.concurrent.Task;
 
 import java.nio.file.Path;
 
-public class CatalogLoadTask extends Task<ProductStore> {
+public class CatalogLoadTask extends Task<CatalogImportResult> {
     private final Path file;
     private final Serializer serializer;
 
@@ -16,8 +17,11 @@ public class CatalogLoadTask extends Task<ProductStore> {
         this.serializer = serializer;
     }
 
-    protected ProductStore call() throws Exception {
+    protected CatalogImportResult call() throws Exception {
         CatalogData data = serializer.load(file);
-        return CatalogService.createStore(data);
+        int sourceVersion = data.getSchemaVersion();
+        CatalogMigrator.migrateToCurrent(data);
+        ProductStore store = CatalogService.createStore(data);
+        return new CatalogImportResult(store, sourceVersion);
     }
 }

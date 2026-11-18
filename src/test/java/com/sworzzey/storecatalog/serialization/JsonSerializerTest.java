@@ -20,6 +20,7 @@ public class JsonSerializerTest {
     @TempDir
     private Path tempDir;
 
+    //позитивные тесты
     @Test
     public void roundTripPreservesProduct() throws IOException {
         Product product = new Product(1, "pillow", "house", 10, 2);
@@ -94,16 +95,17 @@ public class JsonSerializerTest {
         assertEquals(0, loaded.getProducts().length);
     }
 
+    //негативные тесты, не json файл
     @Test
     public void rejectsCorruptedFile() throws IOException {
         Path path = tempDir.resolve("broken.json");
-        Files.writeString(path, "Не бинарный файл");
+        Files.writeString(path, "Не json файл");
 
         JsonSerializer serializer = new JsonSerializer();
         assertThrows(IOException.class, () -> serializer.load(path));
     }
 
-
+    //неподдерживаемая версия
     @Test
     public void rejectsUnsupportedVersion() throws IOException {
         Path path = tempDir.resolve("badVersion.json");
@@ -116,6 +118,7 @@ public class JsonSerializerTest {
         assertEquals("Неподдерживаемая версия", error.getMessage());
     }
 
+    //неизвестный тип продукта
     @Test
     public void rejectsUnknownProductType() throws IOException {
         Path path = tempDir.resolve("badType.json");
@@ -127,6 +130,7 @@ public class JsonSerializerTest {
         assertThrows(InvalidTypeIdException.class, () -> serializer.load(path));
     }
 
+    //отсутствует массив товаров
     @Test
     public void rejectsMissingProducts() throws IOException {
         Path path = tempDir.resolve("noProducts.json");

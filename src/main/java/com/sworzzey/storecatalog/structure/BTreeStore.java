@@ -8,7 +8,6 @@ public class BTreeStore<V> {
     private static final int MAX_KEYS = 3;
     private static final int MAX_CHILDREN = 4;
     private static final int MIN_KEYS = 1;
-    private static final int MIN_CHILDREN = 2;
 
     private Node<V> root;
     private int size;
