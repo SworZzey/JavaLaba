@@ -10,52 +10,68 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<BorderPane fx:controller="com.sworzzey.storecatalog.ui.ProductDialogController" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1">
-   <center>
-      <GridPane BorderPane.alignment="CENTER">
-        <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-        </columnConstraints>
-        <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
-         <children>
-            <Label text="Артикул" />
-            <Label text="Название" GridPane.rowIndex="1" />
-            <Label text="Категория" GridPane.rowIndex="2" />
-            <Label text="Цена" GridPane.rowIndex="3" />
-            <Label text="Остаток" GridPane.rowIndex="4" />
-            <Label text="Гарантия" GridPane.rowIndex="5" />
-            <TextField fx:id="txtArticle" GridPane.columnIndex="1" />
-            <TextField fx:id="txtName" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <TextField fx:id="txtCategory" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <TextField fx:id="txtPrice" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-            <TextField fx:id="txtStock" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-            <TextField fx:id="txtWarranty" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-         </children>
-         <BorderPane.margin>
-            <Insets right="10.0" />
-         </BorderPane.margin>
-         <padding>
-            <Insets left="10.0" />
-         </padding>
-      </GridPane>
-   </center>
-   <bottom>
-      <HBox prefHeight="50.0" prefWidth="400.0" spacing="20.0" BorderPane.alignment="CENTER">
-         <children>
-            <Button fx:id="btnOk" mnemonicParsing="false" text="OK" onAction="#onOkClicked"/>
-            <Button fx:id="btnCancel" mnemonicParsing="false" text="Cansel" onAction="#onCancelClicked" />
-         </children>
-         <padding>
-            <Insets left="10.0" />
-         </padding>
-      </HBox>
-   </bottom>
+<BorderPane fx:controller="com.sworzzey.storecatalog.ui.ProductDialogController"
+            maxHeight="-Infinity" maxWidth="-Infinity"
+            minHeight="-Infinity" minWidth="-Infinity"
+            prefHeight="380.0" prefWidth="400.0"
+            xmlns="http://javafx.com/javafx/26"
+            xmlns:fx="http://javafx.com/fxml/1">
+    <center>
+        <GridPane BorderPane.alignment="CENTER">
+            <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            </rowConstraints>
+            <children>
+                <Label text="Артикул" />
+                <Label text="Название" GridPane.rowIndex="1" />
+                <Label text="Категория" GridPane.rowIndex="2" />
+                <Label text="Цена" GridPane.rowIndex="3" />
+                <Label text="Остаток" GridPane.rowIndex="4" />
+                <Label text="Гарантия" GridPane.rowIndex="5" />
+                <Label text="Заметка" GridPane.rowIndex="6" />
+                <Label text="Рейтинг (0–5)" GridPane.rowIndex="7" />
+
+                <TextField fx:id="txtArticle" GridPane.columnIndex="1" />
+                <TextField fx:id="txtName" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <TextField fx:id="txtCategory" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                <TextField fx:id="txtPrice" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                <TextField fx:id="txtStock" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                <TextField fx:id="txtWarranty" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                <TextField fx:id="txtNote" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                <TextField fx:id="txtRating" text="0"
+                           GridPane.columnIndex="1" GridPane.rowIndex="7" />
+            </children>
+            <BorderPane.margin>
+                <Insets right="10.0" />
+            </BorderPane.margin>
+            <padding>
+                <Insets left="10.0" />
+            </padding>
+        </GridPane>
+    </center>
+    <bottom>
+        <HBox prefHeight="50.0" prefWidth="400.0" spacing="20.0"
+              BorderPane.alignment="CENTER">
+            <children>
+                <Button fx:id="btnOk" mnemonicParsing="false"
+                        text="OK" onAction="#onOkClicked" />
+                <Button fx:id="btnCancel" mnemonicParsing="false"
+                        text="Отмена" onAction="#onCancelClicked" />
+            </children>
+            <padding>
+                <Insets left="10.0" />
+            </padding>
+        </HBox>
+    </bottom>
 </BorderPane>

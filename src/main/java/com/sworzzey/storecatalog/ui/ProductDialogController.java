@@ -30,6 +30,12 @@ public class ProductDialogController {
     private TextField txtWarranty;
 
     @FXML
+    private TextField txtNote;
+
+    @FXML
+    private TextField txtRating;
+
+    @FXML
     private Button btnOk;
 
     @FXML
@@ -53,24 +59,32 @@ public class ProductDialogController {
         } else {
             txtWarranty.clear();
         }
+        txtNote.setText(product.getNote());
+        txtRating.setText(String.valueOf(product.getRating()));
     }
 
     @FXML
     private void onOkClicked(){
         try {
+            Product product;
             if (!txtWarranty.getText().isBlank() && !txtWarranty.getText().equals("0")) {
-                result = new WarrantyProduct(Long.parseLong(txtArticle.getText()), txtName.getText(), txtCategory.getText(), Double.parseDouble(txtPrice.getText()), Integer.parseInt(txtStock.getText()), Integer.parseInt(txtWarranty.getText()));
+                product = new WarrantyProduct(Long.parseLong(txtArticle.getText()), txtName.getText(), txtCategory.getText(), Double.parseDouble(txtPrice.getText()), Integer.parseInt(txtStock.getText()), Integer.parseInt(txtWarranty.getText()));
+                product.setNote(txtNote.getText());
+                product.setRating(Integer.parseInt(txtRating.getText()));
             } else {
-                result = new Product(Long.parseLong(txtArticle.getText()), txtName.getText(), txtCategory.getText(), Double.parseDouble(txtPrice.getText()), Integer.parseInt(txtStock.getText()));
+                product = new Product(Long.parseLong(txtArticle.getText()), txtName.getText(), txtCategory.getText(), Double.parseDouble(txtPrice.getText()), Integer.parseInt(txtStock.getText()));
+                product.setNote(txtNote.getText());
+                product.setRating(Integer.parseInt(txtRating.getText()));
             }
 
             Stage stage = (Stage) btnOk.getScene().getWindow();
+            result = product;
             stage.close();
-        } catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Ошибка");
             alert.setHeaderText("Некорректные данные");
-            alert.setContentText("Проверьте числовые поля.");
+            alert.setContentText("Ошибка: " + e.getMessage());
             alert.showAndWait();
         }
     }

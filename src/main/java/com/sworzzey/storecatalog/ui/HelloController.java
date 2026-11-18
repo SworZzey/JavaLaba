@@ -650,6 +650,33 @@ public class HelloController {
                 return;
             }
 
+            ChoiceDialog<Integer> versionDialog = new ChoiceDialog<>(
+                    CatalogData.CURRENT_SCHEMA_VERSION,
+                    1, 2, 3
+            );
+            versionDialog.initOwner(stage);
+            versionDialog.setTitle("Экспорт каталога");
+            versionDialog.setHeaderText("Выберите версию каталога");
+            versionDialog.setContentText("Версия:");
+
+            Optional<Integer> versionResult = versionDialog.showAndWait();
+
+            if (versionResult.isEmpty()) {
+                return;
+            }
+
+            int targetVersion = versionResult.get();
+
+            if (targetVersion < CatalogData.CURRENT_SCHEMA_VERSION) {
+                Alert option = new Alert(Alert.AlertType.CONFIRMATION);
+                option.setTitle("Подтвердите действие");
+                option.setHeaderText("Экспорт в старую версию с потерей новых данных");
+                Optional<ButtonType> result = option.showAndWait();
+                if (result.isEmpty() || result.get() != ButtonType.OK) {
+                    return;
+                }
+            }
+
             FileChooser.ExtensionFilter selectedFile = fileChooser.getSelectedExtensionFilter();
 
             Serializer serializer;
@@ -660,7 +687,7 @@ public class HelloController {
             }
 
             Path path = file.toPath();
-            catalogSaveTask = new CatalogSaveTask(path, serializer, storage);
+            catalogSaveTask = new CatalogSaveTask(path, serializer, storage, targetVersion);
             progressBar.progressProperty().bind(catalogSaveTask.progressProperty());
 
             catalogSaveTask.setOnSucceeded(event -> {

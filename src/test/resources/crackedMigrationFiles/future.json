@@ -1,0 +1,95 @@
+{
+  "products" : [ {
+    "type" : "PRODUCT",
+    "article" : 1,
+    "name" : "PortableMouse",
+    "category" : "Stationery",
+    "price" : 45061.54,
+    "stock" : 492,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "DISCONTINUED",
+    "article" : 2,
+    "name" : "CompactLamp",
+    "category" : "Sports",
+    "price" : 17535.4,
+    "stock" : 207,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "PRODUCT",
+    "article" : 3,
+    "name" : "PortableMouse",
+    "category" : "Garden",
+    "price" : 44088.04,
+    "stock" : 349,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "PRODUCT",
+    "article" : 4,
+    "name" : "SmartMug",
+    "category" : "Sports",
+    "price" : 46766.57,
+    "stock" : 250,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "DISCONTINUED",
+    "article" : 5,
+    "name" : "SmartSpeaker",
+    "category" : "Stationery",
+    "price" : 12555.69,
+    "stock" : 496,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "DISCONTINUED",
+    "article" : 6,
+    "name" : "CompactMug",
+    "category" : "Stationery",
+    "price" : 47337.02,
+    "stock" : 74,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "PRODUCT",
+    "article" : 7,
+    "name" : "CompactMouse",
+    "category" : "Home",
+    "price" : 28588.68,
+    "stock" : 26,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "WARRANTY",
+    "article" : 8,
+    "name" : "SmartLamp",
+    "category" : "Office",
+    "price" : 28288.77,
+    "stock" : 59,
+    "note" : "",
+    "rating" : 0,
+    "warrantyMonths" : 36
+  }, {
+    "type" : "PRODUCT",
+    "article" : 9,
+    "name" : "CompactBottle",
+    "category" : "Office",
+    "price" : 11765.44,
+    "stock" : 211,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "PRODUCT",
+    "article" : 10,
+    "name" : "ClassicSpeaker",
+    "category" : "Office",
+    "price" : 4661.81,
+    "stock" : 212,
+    "note" : "",
+    "rating" : 0
+  } ],
+  "schema_version" : 4
+}

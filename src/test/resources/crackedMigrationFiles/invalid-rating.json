@@ -1,0 +1,88 @@
+{
+  "products" : [ {
+    "type" : "WARRANTY",
+    "article" : 1,
+    "name" : "ClassicLamp",
+    "category" : "Electronics",
+    "price" : 13263.16,
+    "stock" : 466,
+    "note" : "",
+    "rating" : 12,
+    "warrantyMonths" : 12
+  }, {
+    "type" : "PRODUCT",
+    "article" : 2,
+    "name" : "SmartMug",
+    "category" : "Kitchen",
+    "price" : 4060.48,
+    "stock" : 121,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "PRODUCT",
+    "article" : 3,
+    "name" : "PortableMouse",
+    "category" : "Office",
+    "price" : 17706.7,
+    "stock" : 285,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "PRODUCT",
+    "article" : 4,
+    "name" : "CompactLamp",
+    "category" : "Kitchen",
+    "price" : 45836.31,
+    "stock" : 171,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "WARRANTY",
+    "article" : 5,
+    "name" : "CompactSpeaker",
+    "category" : "Home",
+    "price" : 28511.88,
+    "stock" : 370,
+    "note" : "",
+    "rating" : 0,
+    "warrantyMonths" : 6
+  }, {
+    "type" : "PRODUCT",
+    "article" : 6,
+    "name" : "PortableBottle",
+    "category" : "Office",
+    "price" : 7150.53,
+    "stock" : 442,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "PRODUCT",
+    "article" : 7,
+    "name" : "SmartKeyboard",
+    "category" : "Garden",
+    "price" : 13379.77,
+    "stock" : 73,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "PRODUCT",
+    "article" : 8,
+    "name" : "CompactMouse",
+    "category" : "Garden",
+    "price" : 10680.08,
+    "stock" : 231,
+    "note" : "",
+    "rating" : 0
+  }, {
+    "type" : "WARRANTY",
+    "article" : 9,
+    "name" : "WirelessKeyboard",
+    "category" : "Home",
+    "price" : 25154.91,
+    "stock" : 173,
+    "note" : "",
+    "rating" : 0,
+    "warrantyMonths" : 36
+  } ],
+  "schema_version" : 3
+}
